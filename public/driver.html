@@ -1,0 +1,151 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Driver GPS Sender</title>
+  <style>
+    body{font-family:system-ui;margin:16px;background:#f5f7fa}
+    .auth-card{max-width:400px;margin:2rem auto;padding:2rem;border-radius:12px;background:white;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+    .auth-tabs{display:flex;background:#f0f2f5;border-radius:8px;margin-bottom:1.5rem}
+    .tab-btn{flex:1;padding:12px;border:none;background:none;cursor:pointer;border-radius:8px;font-weight:500}
+    .tab-btn.active{background:#4f46e5;color:white;box-shadow:0 2px 8px rgba(79,70,229,0.3)}
+    .form.hidden{display:none}
+    input,button{padding:12px;margin:8px 0;width:100%;border:1px solid #ddd;border-radius:6px;box-sizing:border-box}
+    button{background:#4f46e5;color:white;border:none;cursor:pointer;font-weight:500}
+    button:hover{background:#3730a3}
+    button.secondary{background:#6b7280;color:white}
+    button:disabled{background:#ccc;cursor:not-allowed}
+    .row{display:flex;gap:10px}
+    .row>*{flex:1}
+    pre{background:#111;color:#0f0;padding:12px;border-radius:6px;overflow:auto;font-size:14px}
+    h2{margin:0 0 1rem}
+    .small{font-size:0.875em;color:#6b7280}
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <h2>Driver Portal</h2>
+    
+    <!-- Tabs -->
+    <div class="auth-tabs">
+      <button class="tab-btn active" onclick="switchDriverTab('login')">Login</button>
+      <button class="tab-btn" onclick="switchDriverTab('signup')">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="driverLoginForm" class="form">
+      <label>Username</label>
+      <input name="username" required placeholder="driver1" />
+      
+      <label>Password</label>
+      <input name="password" type="password" required placeholder="*****" />
+      
+      <label>Bus ID</label>
+      <input name="bus_id" type="number" required placeholder="1" />
+      
+      <button type="submit">Login → Start GPS</button>
+      <p class="small">Enter credentials to start tracking.</p>
+    </form>
+
+    <!-- Signup Form -->
+    <form id="driverSignupForm" class="form hidden">
+      <label>Username *</label>
+      <input name="username" required placeholder="driver1" />
+      
+      <label>Password *</label>
+      <input name="password" type="password" required placeholder="min 6 chars" />
+      
+      <label>Phone</label>
+      <input name="phone" placeholder="+8801XXXXXXXXX" />
+      
+      <label>Bus ID *</label>
+      <input name="bus_id" type="number" required placeholder="1" />
+      
+      <button type="submit">Create Account → Login</button>
+      <p class="small">* Required. Account saved locally for demo.</p>
+    </form>
+
+    <!-- GPS Interface (hidden initially) -->
+    <div id="gpsInterface" style="display:none;">
+      <h2>GPS Tracking Active</h2>
+      <label>Bus ID: <span id="activeBusId">-</span></label>
+      <div class="row">
+        <button id="startBtn">Start Sending</button>
+        <button id="stopBtn" disabled>Stop</button>
+      </div>
+      <pre id="log">Ready to track…</pre>
+      <button class="secondary" onclick="logoutDriver()">Logout</button>
+    </div>
+  </div>
+
+  <script>
+    let currentDriverTab = 'login';
+    let watchId = null;
+    const API_BASE = "http://localhost:3000/api";
+
+    function switchDriverTab(tab) {
+      currentDriverTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      
+      document.getElementById('driverLoginForm').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('driverSignupForm').classList.toggle('hidden', tab !== 'signup');
+    }
+
+    // Driver Login
+    document.getElementById('driverLoginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const driver = Object.fromEntries(fd.entries());
+      
+      // Verify against local accounts (demo)
+      const accounts = JSON.parse(localStorage.getItem('sbt_driver_accounts') || '[]');
+      const valid = accounts.find(acc => acc.username === driver.username);
+      
+      if (valid) {
+        localStorage.setItem('sbt_driver', JSON.stringify({ ...driver, role: 'driver' }));
+        showGPSInterface(driver.bus_id);
+      } else {
+        alert('Invalid credentials');
+      }
+    });
+
+    // Driver Signup
+    document.getElementById('driverSignupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const driver = Object.fromEntries(fd.entries());
+      
+      const accounts = JSON.parse(localStorage.getItem('sbt_driver_accounts') || '[]');
+      if (accounts.find(acc => acc.username === driver.username)) {
+        alert('Username exists');
+        return;
+      }
+      
+      accounts.push({ ...driver, role: 'driver' });
+      localStorage.setItem('sbt_driver_accounts', JSON.stringify(accounts));
+      
+      // Auto-login
+      localStorage.setItem('sbt_driver', JSON.stringify({ ...driver, role: 'driver' }));
+      showGPSInterface(driver.bus_id);
+    });
+
+    function showGPSInterface(busId) {
+      document.querySelectorAll('form').forEach(f => f.style.display = 'none');
+      document.getElementById('gpsInterface').style.display = 'block';
+      document.getElementById('activeBusId').textContent = busId;
+      document.getElementById('busId').value = busId;
+    }
+
+    function logoutDriver() {
+      localStorage.removeItem('sbt_driver');
+      location.reload();
+    }
+
+    // GPS functions (your existing code - paste below)
+    function log(msg){ document.getElementById("log").textContent = msg; }
+    // ... rest of your GPS code stays exactly the same
+  </script>
+</body>
+</html>

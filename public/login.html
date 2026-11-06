@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Tabs */
+    .auth-tabs { display: flex; background: rgba(255,255,255,0.08); border-radius: 8px; margin-bottom: 1.5rem; overflow: hidden; }
+    .tab-btn { flex: 1; padding: 12px; border: none; background: none; cursor: pointer; font-weight: 500; transition: 0.2s; }
+    .tab-btn.active { background: rgba(255,255,255,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .form.hidden { display: none; }
+
+    /* Bottom switch links */
+    .switch-link {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 18px;
+      font-size: 0.85rem;
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .switch-link span:hover {
+      text-decoration: underline;
+    }
+
+    /* Auth card tweaks */
+    .auth-card {
+      width: 520px;
+      max-width: 95%;
+      min-height: 450px;
+      background: rgba(255,255,255,0.08) !important;
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 18px;
+      padding: 40px 36px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35), 0 0 30px rgba(79,124,255,.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      animation: loginPopup .3s ease;
+    }
+
+    @keyframes loginPopup {
+      from { transform: scale(.95); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="auth-bg">
+  <main class="auth-card">
+    <div class="brand">
+      <div class="logo"> </div>
+      <div>
+        <h1>Student Bus Tracker</h1>
+        <p class="muted" id="form-subtitle">Login to view buses and tracking.</p>
+      </div>
+    </div>
+
+    <!-- Tabs
+    <div class="auth-tabs">
+      <button class="tab-btn active" onclick="switchTab('login', event)">Login</button>
+      <button class="tab-btn" onclick="switchTab('signup', event)">Sign Up</button>
+    </div> -->
+
+    <!-- Login Form -->
+    <form id="loginForm" class="form">
+      <div class="grid2">
+        <label>
+          Name
+          <input name="name" required placeholder="Your name" />
+        </label>
+        <label>
+          Department
+          <input name="department" required placeholder="CSE" />
+        </label>
+      </div>
+      <div class="grid2">
+        <label>
+          Batch
+          <input name="batch" required placeholder="2022" />
+        </label>
+        <label>
+          Email
+          <input name="email" type="email" required placeholder="student@example.com" />
+        </label>
+      </div>
+      <button class="btn primary" type="submit">Login → Dashboard</button>
+
+      <!-- Switch to Sign Up -->
+      <div class="switch-link">
+        <span onclick="switchTab('signup', event)">Don't have an account? Sign Up →</span>
+        <span></span>
+      </div>
+
+    </form>
+
+    <!-- Signup Form -->
+    <form id="signupForm" class="form hidden">
+      <div class="grid2">
+        <label>
+          Name *
+          <input name="name" required placeholder="John Doe" />
+        </label>
+        <label>
+          Department *
+          <input name="department" required placeholder="CSE" />
+        </label>
+      </div>
+      <div class="grid2">
+        <label>
+          Batch *
+          <input name="batch" required placeholder="2022" />
+        </label>
+        <label>
+          Email *
+          <input name="email" type="email" required placeholder="student@example.com" />
+        </label>
+      </div>
+      <button class="btn primary" type="submit">Create Account → Login</button>
+
+      <!-- Switch to Login -->
+      <div class="switch-link">
+        <span></span>
+        <span onclick="switchTab('login', event)">Already have an account? Login →</span>
+      </div>
+
+    </form>
+  </main>
+
+  <script>
+    let currentTab = 'login';
+
+    function switchTab(tab, event) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      if(event) event.target.classList.add('active');
+
+      document.getElementById('loginForm').classList.toggle('hidden', tab !== 'login');
+      document.getElementById('signupForm').classList.toggle('hidden', tab !== 'signup');
+
+      document.getElementById('form-subtitle').textContent = 
+        tab === 'login' ? 'Login to view buses and tracking.' : 'Create new account.';
+    }
+
+    // Login handler
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const userInput = Object.fromEntries(fd.entries());
+
+  const accounts = JSON.parse(localStorage.getItem('sbt_accounts') || '[]');
+
+  const matchedUser = accounts.find(acc =>
+    acc.name === userInput.name &&
+    acc.department === userInput.department &&
+    acc.batch === userInput.batch &&
+    acc.email === userInput.email
+  );
+
+  if (!matchedUser) {
+    alert("Account not found! Please sign up first.");
+    return;
+  }
+
+  localStorage.setItem('sbt_user', JSON.stringify(matchedUser));
+  location.href = "app.html#home";
+});
+
+    // Signup handler
+
+
+    document.getElementById('signupForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const user = Object.fromEntries(fd.entries());
+      
+      const accounts = JSON.parse(localStorage.getItem('sbt_accounts') || '[]');
+      accounts.push({ ...user, role: 'student', created: new Date().toISOString() });
+      localStorage.setItem('sbt_accounts', JSON.stringify(accounts));
+
+     document.getElementById('signupForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const user = Object.fromEntries(fd.entries());
+
+  const accounts = JSON.parse(localStorage.getItem('sbt_accounts') || '[]');
+  accounts.push({ ...user, role: 'student', created: new Date().toISOString() });
+  localStorage.setItem('sbt_accounts', JSON.stringify(accounts));
+
+  alert("Account created successfully! Please login.");
+
+  // clear form
+  e.target.reset();
+
+  // go back to login form
+  switchTab('login');
+});
+    });
+  </script>
+</body>
+</html>

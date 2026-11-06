@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Student Bus Tracker</title>
+    <link rel="stylesheet" href="css/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand-inline">
+        <div class="logo small">SB</div>
+        <div class="title">
+          <div class="name">Student Bus Tracker</div>
+          <div class="muted small">Live location tracking</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- CLEAN NAVBAR (Fixed - No weird text) -->
+    <nav class="nav">
+      <a href="#home" data-link>Home</a>
+      <a href="#live" data-link>Live Tracking</a>
+      <a href="#routes" data-link>Routes</a>
+      <span id="notificationBar" class="notification-container">
+        <a href="#notifications" class="notification-link" data-link>
+          <img src="/student-bus-tracker/public/images/bell.png" alt="🔔" class="notification-icon">
+        </a>
+        <span id="unreadCount" class="notification-badge">2</span>
+      </span>
+      <a href="#profile" data-link>Profile</a>
+      <button id="logoutBtn" class="btn danger small">Logout</button>
+    </nav>
+
+    <div class="layout">
+      <aside class="sidebar">
+        <h3 class="sidebar-title">Bus Selection</h3>
+
+        <label class="field">
+          Select direction
+          <select id="directionSelect"></select>
+        </label>
+
+        <label class="field">
+          Select bus
+          <select id="busSelect"></select>
+        </label>
+
+        <div class="card live-card">
+          <div class="card-title">
+            Live Info
+            <span id="liveBadge" class="badge badge-idle">Idle</span>
+          </div>
+
+          <div id="liveBusTitle" class="live-bus-title">No bus selected</div>
+
+          <dl class="live-dl">
+            <div class="live-row">
+              <dt>Status</dt>
+              <dd id="liveStatus">—</dd>
+            </div>
+            <div class="live-row">
+              <dt>Last update</dt>
+              <dd id="liveLastUpdate">—</dd>
+            </div>
+            <div class="live-row">
+              <dt>ETA (approx.)</dt>
+              <dd id="liveEta">—</dd>
+            </div>
+            <div class="live-row">
+              <dt>Next stop</dt>
+              <dd id="liveNextStop">—</dd>
+            </div>
+          </dl>
+        </div>
+      </aside>
+
+      <main class="content">
+        <!-- HOME -->
+        <section id="page-home" class="page active">
+          <h2>Home</h2>
+          <p class="muted">This page is overview only (not live tracking).</p>
+
+          <div class="cards3">
+            <div class="card">
+              <div class="card-title">Total buses</div>
+              <div id="totalBuses" class="stat">—</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Active buses</div>
+              <div id="activeBuses" class="stat">—</div>
+            </div>
+            <div class="card">
+              <div class="card-title">System status</div>
+              <div id="systemStatus" class="stat ok">OK</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Available buses</div>
+            <div id="busList" class="list">Loading…</div>
+          </div>
+        </section>
+
+        <!-- LIVE TRACKING -->
+        <section id="page-live" class="page">
+          <div class="page-head">
+            <h2>Live Tracking</h2>
+            <p class="muted">Map shows live marker + route. Auto-refresh every few seconds.</p>
+          </div>
+
+          <div class="map-wrap">
+            <div id="map" class="map" aria-label="Live bus map"></div>
+            <div class="map-badge" id="mapBadge">Waiting for bus data…</div>
+          </div>
+        </section>
+
+        <!-- ROUTES -->
+        <section id="page-routes" class="page">
+          <h2>Routes</h2>
+          <p class="muted">Static route list + stops (no live movement).</p>
+
+          <div class="card">
+            <div class="card-title">Route details</div>
+            <div id="routeDetails" class="list">
+              Select a bus to see its route.
+            </div>
+          </div>
+        </section>
+
+        <!-- CLEAN NOTIFICATIONS (NO headers) -->
+        <section id="page-notifications" class="page">
+          <div id="notificationsList" class="notifications-scroll">
+            Loading notifications...
+          </div>
+        </section>
+
+        <!-- PROFILE -->
+        <section id="page-profile" class="page">
+          <h2>Profile</h2>
+          <p class="muted">Student account info.</p>
+
+          <div class="card">
+            <div class="card-title">Student info</div>
+            <div id="profileInfo" class="list">—</div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <!-- ADMIN FAB (Bottom Right - VISIBLE) -->
+    <button id="adminFab" class="admin-fab" title="Admin Panel">
+      <img src="/student-bus-tracker/public/images/plus.png" alt="add">
+    </button>
+
+    <!-- ADMIN MODAL -->
+    <div id="adminModal" class="admin-modal">
+      <div class="admin-modal-content">
+        <h3>📢 New Notification</h3>
+        <div class="admin-input-group">
+          <label>Title</label>
+          <input type="text" id="notifTitle" placeholder="e.g. Mirpur14 - 15min delay">
+        </div>
+        <div class="admin-input-group">
+          <label>Message</label>
+          <textarea id="notifMessage" rows="4" placeholder="Enter message..."></textarea>
+        </div>
+        <div class="admin-input-group">
+          <label>Type</label>
+          <select id="notifType">
+            <option value="delay">Delay</option>
+            <option value="route_change">Route Change</option>
+            <option value="status">Status</option>
+          </select>
+        </div>
+        <div class="admin-modal-buttons">
+          <button class="admin-btn admin-btn-secondary" id="adminCancel">Cancel</button>
+          <button class="admin-btn admin-btn-primary" id="adminPost">Post</button>
+        </div>
+      </div>
+    </div>
+
+
+<script>
+  const user = JSON.parse(localStorage.getItem('sbt_user'));
+
+  // যদি login না করা থাকে → login page এ পাঠাবে
+  if (!user) {
+    window.location.href = "login.html";
+  } else {
+
+    // ✅ Navbar এর Profile → Name বানানো
+    const profileLink = document.querySelector('a[href="#profile"]');
+    if (profileLink) {
+profileLink.textContent = user.name;
+profileLink.classList.add("user-highlight");    }
+
+    // ✅ Profile page এ student info show করা
+    const profileInfo = document.getElementById("profileInfo");
+
+    if (profileInfo) {
+      profileInfo.innerHTML = `
+        <div><strong>Name:</strong> ${user.name}</div>
+        <div><strong>Department:</strong> ${user.department}</div>
+        <div><strong>Batch:</strong> ${user.batch}</div>
+        <div><strong>Email:</strong> ${user.email}</div>
+      `;
+    }
+  }
+
+   // ✅ Logout button logic
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function () {
+      localStorage.removeItem("sbt_user");
+      window.location.href = "login.html";
+    });
+  }
+</script>
+
+
+
+
+    <script src="js/app.js"></script>
+    
+    <!-- Google Maps (Fixed) -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDxxxxxxxxxxxx&callback=initMap&loading=async"></script>
+    <script>
+    function initMap() {
+      console.log('🗺️ Google Maps loaded');
+    }
+    </script>
+  </body>
+</html>
